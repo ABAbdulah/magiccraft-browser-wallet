@@ -17,8 +17,13 @@ export default defineConfig({
       stream: 'stream-browserify',
       http: 'http-browserify',
       https: 'https-browserify',
-      util: 'util'
+      util: 'util',
+      buffer: 'buffer',
+      
     }
+  },define: {
+    // Add global Buffer
+    global: 'globalThis',
   },
   build: {
     rollupOptions: {

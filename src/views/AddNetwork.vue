@@ -2,72 +2,62 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title>{{ isEdit ? "Edit Network" : "Add Network" }}</ion-title>
+        <ion-title v-if="!isEdit">Add Account</ion-title>
+        <ion-title v-else>Edit Account</ion-title>
       </ion-toolbar>
     </ion-header>
+
     <ion-content class="ion-padding">
-      <ion-button v-if="!isEdit" @click="templateModal = true" expand="block"
-        >Add from popular chain list</ion-button
-      >
       <ion-item>
-        <ion-input
-          label="Name(*)"
-          labelPlacement="stacked"
-          v-model="name"
-          placeholder="ex: Polygon"
-        ></ion-input>
+        <ion-input label="Name" labelPlacement="stacked" v-model="name"></ion-input>
       </ion-item>
       <ion-item>
-        <ion-input
-          label="ChainId(*)"
-          labelPlacement="stacked"
-          v-model="chainId"
-          placeholder="137"
-          type="number"
-        ></ion-input>
+        <ion-label>Get Random Name</ion-label>
+        <ion-button @click="getRandomName">Generate</ion-button>
       </ion-item>
-      <ion-item button>
+      <ion-item v-if="!isEdit">
         <ion-icon
-          :icon="clipboardOutline"
-          @click="paste('pasteRpc')"
           style="margin-right: 0.5rem; cursor: pointer"
+          @click="paste('pastePk')"
+          :icon="clipboardOutline"
+          button
         />
         <ion-input
-          label="RPC URL(*)"
+          label="PK"
           labelPlacement="stacked"
-          id="pasteRpc"
-          placeholder="https://polygon-mainnet.g.alchemy.com/..."
-          v-model="rpc"
+          id="pastePk"
+          v-model="pk"
         ></ion-input>
       </ion-item>
-      <ion-item button>
-        <ion-input
-          label="Native Token Symbol"
-          labelPlacement="stacked"
-          id="native-token"
-          placeholder="MATIC"
-          v-model="symbol"
-        ></ion-input>
-      </ion-item>
-      <ion-item button>
-        <ion-icon
-          :icon="clipboardOutline"
-          @click="paste('pasteExplorer')"
-          style="margin-right: 0.5rem; cursor: pointer"
-        />
-        <ion-input
-          label="Explorer"
-          labelPlacement="stacked"
-          id="pasteExplorer"
-          placeholder="https://polygonscan.com"
-          v-model="explorer"
-        ></ion-input>
-      </ion-item>
+      <template v-if="!isEdit">
+        <ion-item>
+          <ion-label>Get Random PK</ion-label>
+          <ion-button @click="generateRandomPk">Generate</ion-button>
+        </ion-item>
+        <!-- NEW: Generate wallet with mnemonic -->
+        <ion-item>
+          <ion-button @click="generateWalletWithMnemonic" expand="full" color="success">
+            Create New Wallet (Generate Mnemonic)
+          </ion-button>
+        </ion-item>
+        <ion-item>
+          <ion-button @click="mnemonicModal = true" expand="full">
+            Extract From A Mnemonic
+          </ion-button>
+        </ion-item>
+      </template>
       <ion-item>
         <ion-button @click="onCancel">Cancel</ion-button>
-        <ion-button @click="onAddNetwork">{{
-          isEdit ? "Edit Network" : "Add Network"
-        }}</ion-button>
+        <ion-button
+          @click="
+            () => {
+              isEdit ? onEditAccount() : onAddAccount();
+            }
+          "
+          expand="full"
+          color="primary"
+          >{{ isEdit ? "Edit Account" : "Add Account" }}</ion-button
+        >
       </ion-item>
       <ion-alert
         :is-open="alertOpen"
@@ -76,67 +66,83 @@
         :buttons="['OK']"
         @didDismiss="alertOpen = false"
       ></ion-alert>
+
+      <!-- NEW: Show generated mnemonic modal -->
+      <ion-modal :is-open="showMnemonicModal" @didDismiss="closeMnemonicDisplay">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>Your Recovery Phrase</ion-title>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content class="ion-padding">
+          <div class="warning-box">
+            <ion-icon :icon="alertCircleOutline" color="warning"></ion-icon>
+            <p><strong>Important:</strong> Write down these 12 words in order and store them safely. This is the only way to recover your wallet!</p>
+          </div>
+          
+          <div class="mnemonic-grid">
+            <div v-for="(word, index) in generatedMnemonic.split(' ')" :key="index" class="mnemonic-word">
+              <span class="word-number">{{ index + 1 }}</span>
+              <span class="word">{{ word }}</span>
+            </div>
+          </div>
+          
+          <ion-item>
+            <ion-checkbox v-model="mnemonicConfirmed"></ion-checkbox>
+            <ion-label style="margin-left: 10px;">
+              I have safely stored my recovery phrase
+            </ion-label>
+          </ion-item>
+          
+          <ion-item>
+            <ion-button @click="closeMnemonicDisplay" color="light">Cancel</ion-button>
+            <ion-button 
+              @click="confirmMnemonicAndAddAccount" 
+              :disabled="!mnemonicConfirmed"
+              expand="full" 
+              color="primary"
+            >
+              Continue & Add Account
+            </ion-button>
+          </ion-item>
+        </ion-content>
+      </ion-modal>
+
+      <ion-modal :is-open="mnemonicModal" @didDismiss="mnemonic = ''">
+        <ion-header>
+          <ion-toolbar>
+            <ion-buttons slot="start">
+              <ion-button @click="mnemonicModal = false">Close</ion-button>
+            </ion-buttons>
+            <ion-title>Extract PK from mnemonic</ion-title>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content class="ion-padding">
+          <ion-item>
+            <ion-label>Enter mnemonic</ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-textarea
+              style="overflow-y: scroll; width: 100%"
+              aria-label="Enter mnemonic"
+              :rows="10"
+              :cols="10"
+              v-model="mnemonic"
+            ></ion-textarea>
+          </ion-item>
+          <ion-item>
+            <ion-label>Enter Index (default: 0)</ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-input aria-label="mnemonic index" v-model="mnemonicIndex"></ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-button @click="mnemonicModal = false" color="light">Close</ion-button>
+            <ion-button @click="extractMnemonic">Extract</ion-button>
+          </ion-item>
+        </ion-content>
+      </ion-modal>
     </ion-content>
-
-    <ion-modal :is-open="templateModal" @will-dismiss="templateModal = false">
-      <ion-header>
-        <ion-toolbar>
-          <ion-buttons slot="start">
-            <ion-button @click="templateModal = false">Close</ion-button>
-          </ion-buttons>
-          <ion-title>Select</ion-title>
-        </ion-toolbar>
-      </ion-header>
-      <ion-content class="ion-padding">
-        <ion-list style="margin-bottom: 4rem">
-          <ion-list-header>
-            <ion-label>Networks</ion-label>
-          </ion-list-header>
-
-          <ion-segment :value="currentSegment" @ion-change="segmentChange">
-            <ion-segment-button value="mainnets">
-              <ion-label>Main Networks</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="testnets">
-              <ion-label>Test Networks</ion-label>
-            </ion-segment-button>
-          </ion-segment>
-
-          <div v-if="currentSegment === 'mainnets'">
-            <ion-list
-              class="ion-padding"
-              v-for="network of Object.values(mainNets)"
-              :key="network.chainId"
-            >
-              <ion-item button style="cursor: pointer" @click="fillTemplate(network)">
-                <ion-avatar class="network-avatar">
-                  <img
-                    :alt="network.name"
-                    :src="getUrl('assets/chain-icons/' + network.icon)"
-                  /> </ion-avatar
-                ><ion-label>{{ network.name }}</ion-label>
-              </ion-item>
-            </ion-list>
-          </div>
-          <div v-else>
-            <ion-list
-              class="ion-padding"
-              v-for="network of Object.values(testNets)"
-              :key="network.chainId"
-            >
-              <ion-item button style="cursor: pointer" @click="fillTemplate(network)">
-                <ion-avatar class="network-avatar">
-                  <img
-                    :alt="network.name"
-                    :src="getUrl('assets/chain-icons/' + network.icon)"
-                  /> </ion-avatar
-                ><ion-label>{{ network.name }}</ion-label>
-              </ion-item>
-            </ion-list>
-          </div>
-        </ion-list>
-      </ion-content>
-    </ion-modal>
   </ion-page>
 </template>
 
@@ -152,153 +158,337 @@ import {
   IonLabel,
   IonInput,
   IonButton,
-  IonIcon,
-  IonModal,
-  IonList,
-  IonSegment,
-  IonSegmentButton,
-  IonListHeader,
-  IonButtons,
-  IonAvatar,
-  modalController,
   IonAlert,
+  IonIcon,
   onIonViewWillEnter,
+  modalController,
+  IonModal,
+  IonButtons,
+  IonTextarea,
+  IonCheckbox,
 } from "@ionic/vue";
+import { ethers } from "ethers";
+import * as bip39 from "bip39"; // NEW: Import bip39
 import {
-  getNetworks,
-  saveSelectedNetwork,
-  getSelectedNetwork,
-  getUrl,
+  saveSelectedAccount,
+  getAccounts,
+  saveAccount,
+  smallRandomString,
   paste,
-  replaceNetworks,
+  getSettings,
+  replaceAccounts,
 } from "@/utils/platform";
 import router from "@/router";
-import { mainNets, testNets } from "@/utils/networks";
 import { useRoute } from "vue-router";
-import { clipboardOutline } from "ionicons/icons";
-import type { Networks, Network } from "@/extension/types";
+import type { Account, Settings } from "@/extension/types";
+import UnlockModal from "@/views/UnlockModal.vue";
+import { encrypt, getCryptoParams } from "@/utils/webCrypto";
+
+import { clipboardOutline, warningOutline, alertCircleOutline } from "ionicons/icons";
+import { getFromMnemonic, getRandomPk } from "@/utils/wallet";
+import { setUnlockModalState } from "@/utils/unlockStore";
 
 const name = ref("");
-const chainId = ref(0);
-const rpc = ref("");
-const symbol = ref("");
-const explorer = ref("");
-const templateModal = ref(false);
-const currentSegment = ref("mainnets");
+const pk = ref("");
 const alertOpen = ref(false);
 const alertMsg = ref("");
+const errorMsg = ref('');
 const route = useRoute();
 const isEdit = route.path.includes("/edit");
-const paramChainId = route.params.chainId ?? "";
+const paramAddress = route.params.address ?? "";
+const mnemonicModal = ref(false);
+const mnemonic = ref("");
+const mnemonicIndex = ref(0);
 
-const fillNetworkInputs = (network: Network) => {
-  name.value = network.name;
-  chainId.value = network.chainId;
-  rpc.value = network.rpc;
-  symbol.value = network.symbol ?? "";
-  explorer.value = network.explorer ?? "";
-};
+// NEW: Mnemonic generation states
+const showMnemonicModal = ref(false);
+const generatedMnemonic = ref("");
+const mnemonicConfirmed = ref(false);
 
-onIonViewWillEnter(async () => {
-  if (isEdit && paramChainId) {
-    const networks = (await getNetworks()) as Networks;
-    fillNetworkInputs(networks[Number(paramChainId)]);
-  }
-});
+let accountsProm: Promise<Account[] | undefined>;
+let settingsProm: Promise<Settings | undefined>;
 
 const resetFields = () => {
   name.value = "";
-  chainId.value = 0;
-  rpc.value = "";
+  pk.value = "";
+  // NEW: Reset mnemonic fields
+  generatedMnemonic.value = "";
+  mnemonicConfirmed.value = false;
 };
 
-const onAddNetwork = async () => {
-  if (Number(chainId.value) < 1) {
-    alertMsg.value = "Chain Id must be a valid decimal integer";
-    alertOpen.value = true;
-    return;
-  }
-  if (name.value.length < 2) {
-    alertMsg.value = "Name must have at least 2 characters";
-    alertOpen.value = true;
-    return;
-  }
-  if (name.value.length > 99) {
-    alertMsg.value = "Name must be less than 100 characters";
-    alertOpen.value = true;
-    return;
-  }
-  if (name.value.length > 99) {
-    try {
-      new URL(rpc.value);
-    } catch {
-      alertMsg.value = "RPC must be a valid URL";
-      alertOpen.value = true;
-      return;
+const openModal = async () => {
+  const modal = await modalController.create({
+    component: UnlockModal,
+    animated: true,
+    focusTrap: false,
+    backdropDismiss: false,
+    componentProps: {
+      unlockType: "addAccount",
+    },
+  });
+  await modal.present();
+  setUnlockModalState(true);
+  const { role, data } = await modal.onWillDismiss();
+  if (role === "confirm") return data;
+  setUnlockModalState(false);
+  return false;
+};
+
+onIonViewWillEnter(async () => {
+  if (isEdit && paramAddress) {
+    accountsProm = getAccounts();
+    settingsProm = getSettings();
+    const accounts = (await accountsProm) as Account[];
+    const acc = accounts.find((account) => account.address === paramAddress);
+    if (acc) {
+      name.value = acc.name;
     }
   }
-  let p1 = Promise.resolve();
-  const networksProm = getNetworks();
-  const selectedNetworkProm = getSelectedNetwork();
+});
 
-  const allNetworks = await Promise.all([networksProm, selectedNetworkProm]);
-  const networks = allNetworks[0] as Networks;
-  const selectedNetwork = allNetworks[1] as Network;
+const deleteAccount = async (address: string, accounts: Account[]) => {
+  const findIndex = accounts.findIndex((a) => a.address === address);
+  const pArr: Array<Promise<void>> = [];
+  if (findIndex !== -1) {
+    accounts.splice(findIndex, 1);
+    pArr.push(replaceAccounts([...accounts]));
+  }
+  await Promise.all(pArr);
+};
 
-  const network = {
+// NEW: Generate wallet with mnemonic
+const generateWalletWithMnemonic = () => {
+  console.log('Generate wallet button clicked'); // DEBUG
+  try {
+    // Generate 12-word mnemonic
+    generatedMnemonic.value = bip39.generateMnemonic();
+    console.log('Generated mnemonic:', generatedMnemonic.value); // DEBUG
+    
+    // Generate random name if empty
+    if (!name.value.trim()) {
+      name.value = smallRandomString();
+      console.log('Generated name:', name.value); // DEBUG
+    }
+    
+    // Show mnemonic modal
+    console.log('Opening mnemonic modal'); // DEBUG
+    showMnemonicModal.value = true;
+  } catch (err) {
+    console.error('Error generating wallet:', err); // DEBUG
+    errorMsg.value = (err as any).message || 'Failed to generate wallet';
+  }
+};
+
+// NEW: Close mnemonic display
+const closeMnemonicDisplay = () => {
+  showMnemonicModal.value = false;
+  generatedMnemonic.value = "";
+  mnemonicConfirmed.value = false;
+};
+
+// NEW: Confirm mnemonic and proceed
+const confirmMnemonicAndAddAccount = () => {
+  if (!mnemonicConfirmed.value) return;
+  
+  // Extract private key from mnemonic (index 0)
+  const wallet = ethers.Wallet.fromPhrase(generatedMnemonic.value);
+  pk.value = wallet.privateKey;
+  
+  // Close modal and proceed with account creation
+  showMnemonicModal.value = false;
+  onAddAccount();
+};
+
+const onEditAccount = async () => {
+  if (name.value.length < 1) {
+    alertMsg.value = "Name cannot be empty.";
+    alertOpen.value = true;
+    return;
+  }
+  const accounts = (await accountsProm) as Account[];
+  const account = accounts.find((acc) => acc.address === paramAddress);
+  if (!account) {
+    alertMsg.value = "Account not found.";
+    alertOpen.value = true;
+    return;
+  }
+  const savedAcc = {
+    address: account.address,
     name: name.value,
-    chainId: chainId.value,
-    rpc: rpc.value,
-    ...(symbol.value ? { symbol: symbol.value } : {}),
-    ...(explorer.value ? { explorer: explorer.value } : {}),
+    pk: account.pk,
+    encPk: account.encPk,
   };
-  if (
-    (Object.keys(networks).length ?? 0) < 1 ||
-    selectedNetwork.chainId === chainId.value
-  ) {
-    p1 = saveSelectedNetwork(network);
-  } else {
-    if (chainId.value in networks && !isEdit) {
-      alertMsg.value = "Network already exists.";
+  await deleteAccount(account.address, accounts);
+
+  await saveAccount(savedAcc);
+  router.push("/tabs/accounts");
+};
+
+const onAddAccount = async () => {
+  let p1 = Promise.resolve();
+  if (name.value.length < 1) {
+    alertMsg.value = "Name cannot be empty.";
+    alertOpen.value = true;
+    return;
+  }
+  if (pk.value.length === 64) {
+    pk.value = `0x${pk.value.trim()}`;
+  }
+  if (pk.value.length !== 66) {
+    alertMsg.value = "Provided private key is invalid.";
+    alertOpen.value = true;
+    return;
+  }
+
+  const wallet = new ethers.Wallet(pk.value);
+  if (!accountsProm) {
+    accountsProm = getAccounts();
+  }
+  if (!settingsProm) {
+    settingsProm = getSettings();
+  }
+  const accounts = (await accountsProm) as Account[];
+  const settings = (await settingsProm) as Settings;
+  if (settings.enableStorageEnctyption) {
+    const pass = await openModal();
+    if (!pass) {
+      alertMsg.value = "Cannot add account without encryption password.";
       alertOpen.value = true;
       return;
     }
+    const cryptoParams = await getCryptoParams(pass);
+    if ((accounts.length ?? 0) < 1) {
+      p1 = saveSelectedAccount({
+        address: wallet.address,
+        name: name.value,
+        pk: pk.value,
+        encPk: await encrypt(pk.value, cryptoParams),
+      });
+    } else {
+      if (accounts.find((account) => account.address === wallet.address)) {
+        alertMsg.value = "Account already exists.";
+        alertOpen.value = true;
+        return;
+      }
+    }
+    const p2 = saveAccount({
+      address: wallet.address,
+      name: name.value,
+      pk: pk.value,
+      encPk: await encrypt(pk.value, cryptoParams),
+    });
+    await Promise.all([p1, p2]);
+  } else {
+    if ((accounts.length ?? 0) < 1) {
+      p1 = saveSelectedAccount({
+        address: wallet.address,
+        name: name.value,
+        pk: pk.value,
+        encPk: "",
+      });
+    } else {
+      if (accounts.find((account) => account.address === wallet.address)) {
+        alertMsg.value = "Account already exists.";
+        alertOpen.value = true;
+        return;
+      }
+    }
+    const p2 = saveAccount({
+      address: wallet.address,
+      name: name.value,
+      pk: pk.value,
+      encPk: "",
+    });
+    await Promise.all([p1, p2]);
   }
-  networks[chainId.value] = network;
-  const p2 = replaceNetworks(networks);
-  await Promise.all([p1, p2]);
   if (isEdit) {
-    router.push("/tabs/networks");
+    router.push("/tabs/accounts");
   } else {
     router.push("/tabs/home");
   }
   resetFields();
 };
 
-const segmentChange = (value: any) => {
-  currentSegment.value = value.detail.value;
+const generateRandomPk = () => {
+  pk.value = getRandomPk();
+};
+
+const getRandomName = () => {
+  name.value = smallRandomString();
 };
 
 const onCancel = () => {
   if (isEdit) {
-    router.push("/tabs/networks");
+    router.push("/tabs/accounts");
   } else {
     router.push("/tabs/home");
   }
 };
 
-const fillTemplate = (network: typeof mainNets[1]) => {
-  fillNetworkInputs(network);
-  modalController?.dismiss(null, "cancel");
+const extractMnemonic = () => {
+  mnemonic.value = mnemonic.value.trim().replace(/\s+/g, " ");
+  mnemonicIndex.value = Number(mnemonicIndex.value);
+  const wordCount = mnemonic.value.trim().split(" ").length;
+
+  if (wordCount !== 12 && wordCount !== 24) {
+    alertMsg.value = "Invalid mnemonic.";
+    alertOpen.value = true;
+    return;
+  }
+  if (mnemonicIndex.value < 0) {
+    alertMsg.value = "Invalid index.";
+    alertOpen.value = true;
+    return;
+  }
+  pk.value = getFromMnemonic(mnemonic.value, mnemonicIndex.value);
+  mnemonicModal.value = false;
 };
 </script>
 
 <style scoped>
-.network-avatar {
-  max-width: 28px;
-  max-height: 28px;
-  margin-top: auto;
-  margin-bottom: auto;
-  margin-right: 1rem;
+.warning-box {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.warning-box ion-icon {
+  margin-right: 10px;
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.mnemonic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.mnemonic-word {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.word-number {
+  font-size: 12px;
+  color: #6c757d;
+  margin-right: 8px;
+  min-width: 15px;
+}
+
+.word {
+  font-family: monospace;
+  font-weight: 500;
 }
 </style>

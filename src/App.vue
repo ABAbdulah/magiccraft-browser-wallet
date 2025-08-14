@@ -10,6 +10,7 @@ import { onBeforeMount, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { getSettings } from "@/utils/platform";
 import { getSelectedAddress } from "@/utils/wallet";
+import { initializeDefaultNetworks } from "@/utils/simpleNetworkInit"; // NEW: Import network initializer
 import type { RequestArguments } from "@/extension/types";
 
 const route = useRoute();
@@ -64,7 +65,15 @@ if (chrome?.runtime?.onMessage) {
   console.info("page listener set");
 }
 
-onBeforeMount(() => {
+onBeforeMount(async () => {
+  // NEW: Initialize default networks on app start
+  try {
+    await initializeDefaultNetworks();
+    console.log("Default networks initialized");
+  } catch (error) {
+    console.error("Failed to initialize networks:", error);
+  }
+
   getSettings().then((settings) => {
     if (settings.theme !== "system") {
       document.body.classList.remove(settings.theme === "dark" ? "light" : "dark");
@@ -72,13 +81,6 @@ onBeforeMount(() => {
     }
   });
 });
-
-// onUnmounted(() => {
-//   if (chrome?.runtime?.onMessage) {
-//     chrome.runtime.onMessage.removeListener(pageListener);
-//     console.info("page listener removed");
-//   }
-// });
 
 onMounted(() => {
   switch (route?.query?.route ?? "") {

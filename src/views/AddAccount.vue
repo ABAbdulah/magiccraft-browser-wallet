@@ -34,10 +34,16 @@
           <ion-label>Get Random PK</ion-label>
           <ion-button @click="generateRandomPk">Generate</ion-button>
         </ion-item>
+        <!-- NEW: Generate wallet with mnemonic -->
         <ion-item>
-          <ion-button @click="mnemonicModal = true" expand="full"
-            >Extract From A Mnemonic</ion-button
-          >
+          <ion-button @click="generateWalletWithMnemonic" expand="full" color="success">
+            Create New Wallet (Generate Mnemonic)
+          </ion-button>
+        </ion-item>
+        <ion-item>
+          <ion-button @click="mnemonicModal = true" expand="full">
+            Extract From A Mnemonic
+          </ion-button>
         </ion-item>
       </template>
       <ion-item>
@@ -60,6 +66,47 @@
         :buttons="['OK']"
         @didDismiss="alertOpen = false"
       ></ion-alert>
+
+      <!-- NEW: Show generated mnemonic modal -->
+      <ion-modal :is-open="showMnemonicModal" @didDismiss="closeMnemonicDisplay">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>Your Recovery Phrase</ion-title>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content class="ion-padding">
+          <div class="warning-box">
+            <ion-icon :icon="alertCircleOutline" color="warning"></ion-icon>
+            <p><strong>Important:</strong> Write down these 12 words in order and store them safely. This is the only way to recover your wallet!</p>
+          </div>
+          
+          <div class="mnemonic-grid">
+            <div v-for="(word, index) in generatedMnemonic.split(' ')" :key="index" class="mnemonic-word">
+              <span class="word-number">{{ index + 1 }}</span>
+              <span class="word">{{ word }}</span>
+            </div>
+          </div>
+          
+          <ion-item>
+            <ion-checkbox v-model="mnemonicConfirmed"></ion-checkbox>
+            <ion-label style="margin-left: 10px;">
+              I have safely stored my recovery phrase
+            </ion-label>
+          </ion-item>
+          
+          <ion-item>
+            <ion-button @click="closeMnemonicDisplay" color="light">Cancel</ion-button>
+            <ion-button 
+              @click="confirmMnemonicAndAddAccount" 
+              :disabled="!mnemonicConfirmed"
+              expand="full" 
+              color="primary"
+            >
+              Continue & Add Account
+            </ion-button>
+          </ion-item>
+        </ion-content>
+      </ion-modal>
 
       <ion-modal :is-open="mnemonicModal" @didDismiss="mnemonic = ''">
         <ion-header>
@@ -118,8 +165,10 @@ import {
   IonModal,
   IonButtons,
   IonTextarea,
+  IonCheckbox,
 } from "@ionic/vue";
 import { ethers } from "ethers";
+// Remove bip39 import - we'll use ethers instead
 import {
   saveSelectedAccount,
   getAccounts,
@@ -135,7 +184,7 @@ import type { Account, Settings } from "@/extension/types";
 import UnlockModal from "@/views/UnlockModal.vue";
 import { encrypt, getCryptoParams } from "@/utils/webCrypto";
 
-import { clipboardOutline } from "ionicons/icons";
+import { clipboardOutline, warningOutline, alertCircleOutline } from "ionicons/icons";
 import { getFromMnemonic, getRandomPk } from "@/utils/wallet";
 import { setUnlockModalState } from "@/utils/unlockStore";
 
@@ -143,6 +192,7 @@ const name = ref("");
 const pk = ref("");
 const alertOpen = ref(false);
 const alertMsg = ref("");
+const errorMsg = ref('');
 const route = useRoute();
 const isEdit = route.path.includes("/edit");
 const paramAddress = route.params.address ?? "";
@@ -150,12 +200,20 @@ const mnemonicModal = ref(false);
 const mnemonic = ref("");
 const mnemonicIndex = ref(0);
 
+// NEW: Mnemonic generation states
+const showMnemonicModal = ref(false);
+const generatedMnemonic = ref("");
+const mnemonicConfirmed = ref(false);
+
 let accountsProm: Promise<Account[] | undefined>;
 let settingsProm: Promise<Settings | undefined>;
 
 const resetFields = () => {
   name.value = "";
   pk.value = "";
+  // NEW: Reset mnemonic fields
+  generatedMnemonic.value = "";
+  mnemonicConfirmed.value = false;
 };
 
 const openModal = async () => {
@@ -196,6 +254,55 @@ const deleteAccount = async (address: string, accounts: Account[]) => {
     pArr.push(replaceAccounts([...accounts]));
   }
   await Promise.all(pArr);
+};
+
+// NEW: Generate wallet with mnemonic using ethers
+const generateWalletWithMnemonic = () => {
+  console.log('Generate wallet button clicked'); // DEBUG
+  try {
+    // Generate 12-word mnemonic using ethers (which already works in your extension)
+    const randomWallet = ethers.Wallet.createRandom();
+    generatedMnemonic.value = randomWallet.mnemonic?.phrase || '';
+    
+    if (!generatedMnemonic.value) {
+      throw new Error('Failed to generate mnemonic');
+    }
+    
+    console.log('Generated mnemonic:', generatedMnemonic.value); // DEBUG
+    
+    // Generate random name if empty
+    if (!name.value.trim()) {
+      name.value = smallRandomString();
+      console.log('Generated name:', name.value); // DEBUG
+    }
+    
+    // Show mnemonic modal
+    console.log('Opening mnemonic modal'); // DEBUG
+    showMnemonicModal.value = true;
+  } catch (err) {
+    console.error('Error generating wallet:', err); // DEBUG
+    errorMsg.value = (err as any).message || 'Failed to generate wallet';
+  }
+};
+
+// NEW: Close mnemonic display
+const closeMnemonicDisplay = () => {
+  showMnemonicModal.value = false;
+  generatedMnemonic.value = "";
+  mnemonicConfirmed.value = false;
+};
+
+// NEW: Confirm mnemonic and proceed
+const confirmMnemonicAndAddAccount = () => {
+  if (!mnemonicConfirmed.value) return;
+  
+  // Extract private key from mnemonic (index 0)
+  const wallet = ethers.Wallet.fromPhrase(generatedMnemonic.value);
+  pk.value = wallet.privateKey;
+  
+  // Close modal and proceed with account creation
+  showMnemonicModal.value = false;
+  onAddAccount();
 };
 
 const onEditAccount = async () => {
@@ -343,3 +450,51 @@ const extractMnemonic = () => {
   mnemonicModal.value = false;
 };
 </script>
+
+<style scoped>
+.warning-box {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.warning-box ion-icon {
+  margin-right: 10px;
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.mnemonic-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.mnemonic-word {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.word-number {
+  font-size: 12px;
+  color: #6c757d;
+  margin-right: 8px;
+  min-width: 15px;
+}
+
+.word {
+  font-family: monospace;
+  font-weight: 500;
+}
+</style>
