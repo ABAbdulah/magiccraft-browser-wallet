@@ -29,7 +29,8 @@
                       ></ion-toggle>
                     </ion-item>
                     <p class="helper-label">
-                      This will require to input an encrypto key when storage is locked.
+                      This will require to input an encrypto key when storage is
+                      locked.
                     </p>
                   </div>
                 </ion-item>
@@ -48,7 +49,8 @@
                   <ion-item
                     class="ion-no-padding no-inner-border"
                     :disabled="
-                      !settings.s.enableStorageEnctyption || !settings.s.lockOutEnabled
+                      !settings.s.enableStorageEnctyption ||
+                      !settings.s.lockOutEnabled
                     "
                   >
                     <ion-label>Auto-lock Period: (2-120) minutes</ion-label>
@@ -56,7 +58,8 @@
                   <ion-item class="ion-no-padding no-inner-border">
                     <ion-input
                       :disabled="
-                        !settings.s.enableStorageEnctyption || !settings.s.lockOutEnabled
+                        !settings.s.enableStorageEnctyption ||
+                        !settings.s.lockOutEnabled
                       "
                       v-model="settings.s.lockOutPeriod"
                       type="number"
@@ -66,7 +69,8 @@
                       @click="setTime"
                       style="margin-left: auto"
                       :disabled="
-                        !settings.s.enableStorageEnctyption || !settings.s.lockOutEnabled
+                        !settings.s.enableStorageEnctyption ||
+                        !settings.s.lockOutEnabled
                       "
                       >Set Auto-lock</ion-button
                     >
@@ -87,8 +91,8 @@
                       ></ion-toggle>
                     </ion-item>
                     <p class="helper-label">
-                      It will require the lock password before any signing of messages or
-                      transactions.
+                      It will require the lock password before any signing of
+                      messages or transactions.
                     </p>
                   </div>
                 </ion-item>
@@ -96,7 +100,9 @@
               <ion-item>
                 <div style="display: flex; flex-direction: column">
                   <ion-item class="ion-no-padding no-inner-border">
-                    <ion-label>Show raw data when sending transactions</ion-label>
+                    <ion-label
+                      >Show raw data when sending transactions</ion-label
+                    >
                     <ion-toggle
                       aria-label="Show raw Data when sending Transaction"
                       @ion-change="changeShowRawTransactionData"
@@ -105,8 +111,8 @@
                     ></ion-toggle>
                   </ion-item>
                   <p class="helper-label">
-                    It will show the raw binary data of the transactions, might be useful
-                    in some development cases.
+                    It will show the raw binary data of the transactions, might
+                    be useful in some development cases.
                   </p>
                 </div>
               </ion-item>
@@ -130,14 +136,18 @@
                       fill="outline"
                       placeholder="example: jTI2AsqMJUkp33r7frrf1SJnxt-Cf2X1"
                       :value="settings.s.assetTransactionSimulationAlchemyKey"
-                      style="font-size: 0.8rem; margin-bottom: 10px; margin-top: 10px"
+                      style="
+                        font-size: 0.8rem;
+                        margin-bottom: 10px;
+                        margin-top: 10px;
+                      "
                     ></ion-textarea>
                   </ion-item>
                   <p class="helper-label">
                     It will show potential changes to your assets when sending a
-                    transaction. This features requires a valid Alchemy API Key, if you
-                    have a free account a key can be used for up to 1k simulations per
-                    day.
+                    transaction. This features requires a valid Alchemy API Key,
+                    if you have a free account a key can be used for up to 1k
+                    simulations per day.
                   </p>
                 </div>
               </ion-item>
@@ -187,7 +197,12 @@
               <ion-label>Import Additional Accounts</ion-label>
             </ion-item>
             <ion-item class="ion-no-padding no-inner-border">
-              <input ref="importFile" type="file" accept=".json" class="file-input-cls" />
+              <input
+                ref="importFile"
+                type="file"
+                accept=".json"
+                class="file-input-cls"
+              />
             </ion-item>
             <ion-item
               class="ion-no-padding no-inner-border"
@@ -208,7 +223,9 @@
           <div class="ion-padding" slot="content">
             <ion-item>
               <ion-label>WIPE All DATA</ion-label>
-              <ion-button color="danger" @click="wipeStorage">PERMA WIPE</ion-button>
+              <ion-button color="danger" @click="wipeStorage"
+                >PERMA WIPE</ion-button
+              >
             </ion-item>
           </div>
         </ion-accordion>
@@ -218,36 +235,37 @@
           </ion-item>
           <div class="ion-padding" slot="content">
             <p>
-              Clear EVM Wallet (CLW) is a fully open-source wallet built with Vue, Ionic,
-              and Ethers.
+              Clear EVM Wallet (CLW) is a fully open-source wallet built with
+              Vue, Ionic, and Ethers.
             </p>
             <p>
-              Unlike most wallets, this wallet has no ads, no analytics, no trackers, no
-              bloatware, no telemetry, no data collection, no sponsored content, no
-              sponsored Dapps, no sponsored tokens, no sponsored NFTs, no sponsored
-              anything. It is a clean wallet with no revenue model, made by a single
-              developer, if you want to support this project financially you can donate at
+              Unlike most wallets, this wallet has no ads, no analytics, no
+              trackers, no bloatware, no telemetry, no data collection, no
+              sponsored content, no sponsored Dapps, no sponsored tokens, no
+              sponsored NFTs, no sponsored anything. It is a clean wallet with
+              no revenue model, made by a single developer, if you want to
+              support this project financially you can donate at
               andrei0x309.eth.
             </p>
             <p>
-              Github Repo:
-              <a href="#" @click="openTab('https://github.com/andrei0x309/clear-wallet')"
+              Docs Website:
+              <a href="#" @click="openTab('https://clear-wallet.flashsoft.eu')"
                 >LINK</a
               >
-            </p>
-            <p>
-              Docs Website:
-              <a href="#" @click="openTab('https://clear-wallet.flashsoft.eu')">LINK</a>
             </p>
             <br />
             <p style="margin-bottom: 0.2rem">Places you can check me out:</p>
             <p>
               Github andrei0x309 -
-              <a href="#" @click="openTab('https://github.com/andrei0x309')">LINK</a>
+              <a href="#" @click="openTab('https://github.com/andrei0x309')"
+                >LINK</a
+              >
             </p>
             <p>
               Mirror Profile
-              <a href="#" @click="openTab('https://mirror.xyz/andrei0x309.eth')">LINK</a>
+              <a href="#" @click="openTab('https://mirror.xyz/andrei0x309.eth')"
+                >LINK</a
+              >
             </p>
             <p>
               Blog Flashsoft
@@ -379,7 +397,10 @@ import { decrypt, encrypt, getCryptoParams } from "@/utils/webCrypto";
 import { Account } from "@/extension/types";
 import { exportFile } from "@/utils/misc";
 import type { Settings } from "@/extension/types";
-import type { IonTextareaCustomEvent, TextareaInputEventDetail } from "@ionic/core";
+import type {
+  IonTextareaCustomEvent,
+  TextareaInputEventDetail,
+} from "@ionic/core";
 import {
   IonContent,
   IonHeader,
@@ -414,7 +435,7 @@ const alertMsg = ref("");
 const toastState = ref(false);
 const toastMsg = ref("");
 const alertHeader = ref("Error");
-const importFile = (ref(null) as unknown) as Ref<HTMLInputElement>;
+const importFile = ref(null) as unknown as Ref<HTMLInputElement>;
 type ModalPromisePassword = null | {
   resolve: (p?: unknown) => void;
   reject: (p?: unknown) => void;
@@ -429,7 +450,7 @@ const wipeStorage = async () => {
   loading.value = false;
 };
 const settings = reactive({
-  s: (null as unknown) as Settings,
+  s: null as unknown as Settings,
 }) as { s: Settings };
 
 const saveSettings = async () => {
@@ -465,8 +486,8 @@ const changeAssetTransactionSimulationAlchemyKey = async (
 };
 
 const changeAssetTransactionSimulation = async () => {
-  settings.s.enableAssetTransactionSimulation = !settings.s
-    .enableAssetTransactionSimulation;
+  settings.s.enableAssetTransactionSimulation =
+    !settings.s.enableAssetTransactionSimulation;
   await saveSettings();
 };
 
@@ -494,7 +515,8 @@ const confirmModal = async () => {
   if (mpPass.value.length < 3) {
     loading.value = false;
     alertHeader.value = "Error";
-    alertMsg.value = "Password is too short. More than 3 characters are required.";
+    alertMsg.value =
+      "Password is too short. More than 3 characters are required.";
     alertOpen.value = true;
     setEncryptToggle(settings.s.enableStorageEnctyption);
     return;
@@ -642,7 +664,7 @@ const importAcc = async () => {
     return;
   }
   const accounts = await getAccounts();
-  const newAccounts = ((validation as unknown) as { json: Account[] }).json;
+  const newAccounts = (validation as unknown as { json: Account[] }).json;
   if (settings.s.enableStorageEnctyption) {
     const hasPass = await promptForPassword(accounts);
     if (hasPass) {

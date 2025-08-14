@@ -49,7 +49,7 @@ const pageListener = (
             sendResponse({
               error: true,
               message:
-                "ClearWallet: Invalid PAGE request method " + (message?.method ?? ""),
+                "MagicCraft: Invalid PAGE request method " + (message?.method ?? ""),
             });
             break;
           }

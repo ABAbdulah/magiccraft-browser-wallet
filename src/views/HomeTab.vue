@@ -1,47 +1,33 @@
 <template>
   <ion-page>
     <ion-header>
-      <ion-toolbar>
+      <ion-toolbar
+        style="--background: #1a1b2f !important; --color: #f1c40f !important"
+      >
         <ion-title>
           <ion-avatar
-            @click="openTab('https://clear-wallet.flashsoft.eu/docs/')"
             class="link-docs"
-            style="margin: 0.3rem; width: 1.6rem; height: 1.6rem; display: inline-flex"
+            style="
+              margin: 0.3rem;
+              width: 1.6rem;
+              height: 1.6rem;
+              display: inline-flex;
+            "
           >
-            <img alt="clw" :src="getUrl('assets/extension-icon/wallet_32.png')" />
+            <img
+              alt="clw"
+              :src="getUrl('assets/extension-icon/wallet_32.png')"
+            />
           </ion-avatar>
           <span
-            @click="openTab('https://clear-wallet.flashsoft.eu/docs/')"
             class="link-docs"
             style="position: absolute; top: 0.35rem; margin-left: 0.3rem"
           >
-            <span style="font-size: 0.9rem; font-weight: bold; color: #aca3bb">
-              Clear
+            <span style="font-size: 0.9rem; font-weight: bold; color: #f1c40f">
+              Magic
             </span>
-            <span style="font-size: 0.9rem; color: #aca3bb"> Wallet </span>
+            <span style="font-size: 0.9rem; color: #f1c40f"> Craft </span>
           </span>
-          <span
-            v-if="version"
-            @click="
-              openTab('https://clear-wallet.flashsoft.eu/docs/automated-changelog/')
-            "
-            style="
-              position: absolute;
-              right: 1.1rem;
-              margin-left: 0.3rem;
-              color: #aca3bb;
-              font-weight: bold;
-              font-size: 0.65rem;
-              top: -1px;
-            "
-            class="link-docs"
-            >Version: {{ version }}</span
-          >
-          <span
-            class="github-icon"
-            @click="openTab('https://github.com/andrei0x309/clear-wallet/')"
-            ><GitHub
-          /></span>
         </ion-title>
       </ion-toolbar>
     </ion-header>
@@ -72,11 +58,15 @@
             )
           "
         >
-          <p style="font-size: 0.7rem; color: #aca3bb">{{ selectedAccount?.address }}</p>
+          <p style="font-size: 0.7rem; color: #aca3bb">
+            {{ selectedAccount?.address }}
+          </p>
           <ion-icon style="margin-left: 0.5rem" :icon="copyOutline"></ion-icon>
         </ion-item>
         <ion-item
-          v-if="!loading && selectedNetwork?.explorer && selectedAccount?.address"
+          v-if="
+            !loading && selectedNetwork?.explorer && selectedAccount?.address
+          "
         >
           <ion-button
             @click="
@@ -158,8 +148,8 @@
         <p v-else>
           RPC performance: {{ Math.trunc(rpcPerformance.performance) }}ms -
           <span style="color: red"
-            >RPC connection is slow or dead please check internet or replace your RPC
-            URL</span
+            >RPC connection is slow or dead please check internet or replace
+            your RPC URL</span
           >
         </p>
       </ion-item>
@@ -167,7 +157,9 @@
         <p class="blink-loading">Loading RPC pefromance...</p>
       </ion-item>
 
-      <ion-item style="margin-top: 0.3rem; margin-bottom: 0.3rem; text-align: center">
+      <ion-item
+        style="margin-top: 0.3rem; margin-bottom: 0.3rem; text-align: center"
+      >
         <ion-button
           @click="goToFarcasterActions"
           expand="block"
@@ -176,7 +168,9 @@
         >
       </ion-item>
 
-      <ion-item style="margin-top: 0.3rem; margin-bottom: 0.3rem; text-align: center">
+      <ion-item
+        style="margin-top: 0.3rem; margin-bottom: 0.3rem; text-align: center"
+      >
         <ion-button
           @click="goToPersonalSign"
           expand="block"
@@ -216,7 +210,10 @@
       ></ion-toast>
     </ion-content>
     <SelectedAccountModal :refs="() => getRefs()" :key="`${loading}-status`" />
-    <ion-modal :is-open="networksModal" @ionModalDidPresent="networkModalPresented">
+    <ion-modal
+      :is-open="networksModal"
+      @ionModalDidPresent="networkModalPresented"
+    >
       <ion-header>
         <ion-toolbar>
           <ion-buttons slot="start">
@@ -363,8 +360,8 @@ const accounts = ref([]) as Ref<Account[]>;
 const networks = ref({}) as Ref<Networks>;
 const accountsModal = ref(false) as Ref<boolean>;
 const networksModal = ref(false) as Ref<boolean>;
-const selectedAccount = (ref(null) as unknown) as Ref<Account>;
-const selectedNetwork = (ref(null) as unknown) as Ref<Network>;
+const selectedAccount = ref(null) as unknown as Ref<Account>;
+const selectedNetwork = ref(null) as unknown as Ref<Network>;
 const toastState = ref(false);
 const settings = ref({}) as Ref<Awaited<ReturnType<typeof getSettings>>>;
 const rpcPerformance = ref({ performance: 0 }) as Ref<{ performance: number }>;
@@ -395,17 +392,21 @@ const loadData = () => {
   const pSelectedAccount = getSelectedAccount();
   const pSelectedNetwork = getSelectedNetwork();
   const pSettings = getSettings();
-  Promise.all([pAccounts, pNetworks, pSelectedAccount, pSelectedNetwork, pSettings]).then(
-    (res) => {
-      accounts.value = res[0];
-      networks.value = res[1];
-      filtredNetworks.value = res[1];
-      selectedAccount.value = res[2];
-      selectedNetwork.value = res[3];
-      settings.value = res[4];
-      loading.value = false;
-    }
-  );
+  Promise.all([
+    pAccounts,
+    pNetworks,
+    pSelectedAccount,
+    pSelectedNetwork,
+    pSettings,
+  ]).then((res) => {
+    accounts.value = res[0];
+    networks.value = res[1];
+    filtredNetworks.value = res[1];
+    selectedAccount.value = res[2];
+    selectedNetwork.value = res[3];
+    settings.value = res[4];
+    loading.value = false;
+  });
 
   loadRPCPerformance();
 };
@@ -450,16 +451,23 @@ const changeSelectedNetwork = async (chainId: number) => {
 const searchNetwork = (e: any) => {
   const text = e.target.value;
   if (text) {
-    const filtred = Object.keys(networks.value).reduce((acc: Networks, key: string) => {
-      if (
-        networks.value[Number(key)].name.toLowerCase().includes(text.toLowerCase()) ||
-        networks.value[Number(key)].rpc.toLowerCase().includes(text.toLowerCase()) ||
-        networks.value[Number(key)].chainId.toString().includes(text)
-      ) {
-        acc[Number(key)] = networks.value[Number(key)];
-      }
-      return acc;
-    }, {} as Networks);
+    const filtred = Object.keys(networks.value).reduce(
+      (acc: Networks, key: string) => {
+        if (
+          networks.value[Number(key)].name
+            .toLowerCase()
+            .includes(text.toLowerCase()) ||
+          networks.value[Number(key)].rpc
+            .toLowerCase()
+            .includes(text.toLowerCase()) ||
+          networks.value[Number(key)].chainId.toString().includes(text)
+        ) {
+          acc[Number(key)] = networks.value[Number(key)];
+        }
+        return acc;
+      },
+      {} as Networks
+    );
     filtredNetworks.value = filtred;
   } else {
     filtredNetworks.value = networks.value;
@@ -488,23 +496,6 @@ const networkModalPresented = () => {
   cursor: pointer;
 }
 .exchange-btn:hover {
-  opacity: 0.8;
-  transition: opacity 0.2s ease-in-out;
-  transform: scale(1.05);
-}
-
-.github-icon {
-  position: absolute;
-  top: 0.9rem;
-  right: 2.4rem;
-  margin-left: 0.3rem;
-  color: #aca3bb;
-  font-weight: bold;
-  font-size: 0.65rem;
-  cursor: pointer;
-}
-
-.github-icon:hover {
   opacity: 0.8;
   transition: opacity 0.2s ease-in-out;
   transform: scale(1.05);
